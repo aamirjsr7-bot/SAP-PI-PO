@@ -1,0 +1,61 @@
+package com.map;
+
+import com.sap.aii.mapping.api.*;
+import org.json.JSONObject;
+import org.json.XML;
+import java.io.*;
+
+public class XmlToJsonMapping extends AbstractTransformation {
+    @Override
+    public void transform(TransformationInput input, TransformationOutput output) throws StreamTransformationException {
+        try {
+            
+            InputStream inputStream = input.getInputPayload().getInputStream();
+            OutputStream outputStream = output.getOutputPayload().getOutputStream();
+            
+            this.parse(inputStream, outputStream);
+                    
+        } catch (Exception e) {
+            throw new StreamTransformationException("Error in XML to JSON conversion: " + e.getMessage());
+        }
+    }
+    
+    public void parse (InputStream is, OutputStream os){
+    	 try {
+    		// Get input XML
+             String xmlString = convertStreamToString(is);
+          
+             // Convert XML to JSON
+             JSONObject jsonObject = XML.toJSONObject(xmlString);
+             // To remove top key ns0:MT_LC_Issuance_ECC_REQ from JSON 
+             JSONObject innerJson = jsonObject.getJSONObject("ns0:MT_LC_Issuance_ECC_REQ");
+             String jsonString = innerJson.toString(4); // 4 for pretty printing with indentation
+             
+             // Write JSON to output
+             os.write(jsonString.getBytes());            
+         }  catch (Exception var5) {
+	      }
+    }
+// using main method to test inside local system using NWDS
+public static void main(String[] args) {
+	      try {
+	         FileInputStream fileInput = new FileInputStream("C:\\Users\\Directory\\Test payload for XML2JSON Conversion.xml");
+	         FileOutputStream fileOut = new FileOutputStream("C:\\Users\\Directory\\JSON payload without top level key.txt");
+	         XmlToJsonMapping pp = new XmlToJsonMapping();
+	         pp.parse(fileInput, fileOut);
+	      } catch (Exception var4) {
+	         var4.printStackTrace();
+	      }
+
+	   }
+    private String convertStreamToString(InputStream is) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            sb.append(line);
+        }
+        reader.close();
+        return sb.toString();
+    }
+}
